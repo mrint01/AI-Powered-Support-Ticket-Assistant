@@ -1,0 +1,6 @@
+/* TicketsList.module.css - Use Tailwind for most styling. Add custom overrides here if needed. */
+
+/* Example: Custom shadow for table */
+.tableShadow {
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+} 

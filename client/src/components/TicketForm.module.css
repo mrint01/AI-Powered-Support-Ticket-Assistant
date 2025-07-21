@@ -1,0 +1,6 @@
+/* TicketForm.module.css - Use Tailwind for most styling. Add custom overrides here if needed. */
+
+/* Example: Custom border for form */
+.formBorder {
+  border: 2px solid #3b82f6;
+} 
