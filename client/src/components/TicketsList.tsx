@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { HiEye, HiReply, HiTrash, HiX } from 'react-icons/hi';
-import styles from './TicketsList.module.css';
+import { useTickets } from '../hooks/useTickets';
 
 type Priority = 'high' | 'medium' | 'low';
 
@@ -13,12 +13,6 @@ type Ticket = {
   message: string;
   response?: string;
 };
-
-const initialTickets: Ticket[] = [
-  { id: 1, subject: 'Login Issue', status: 'Open', created: '2024-06-01', priority: 'low', message: 'Cannot log in with my credentials.' },
-  { id: 2, subject: 'Payment Failed', status: 'Pending', created: '2024-06-02', priority: 'high', message: 'Payment did not go through.' },
-  { id: 3, subject: 'Feature Request', status: 'Closed', created: '2024-06-03', priority: 'medium', message: 'Would love a dark mode.' },
-];
 
 const statusColors: Record<string, string> = {
   Open: 'bg-green-100 text-green-800',
@@ -33,7 +27,7 @@ const priorityColors: Record<Priority, string> = {
 const priorityOrder: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 
 const TicketsList: React.FC = () => {
-  const [tickets, setTickets] = React.useState<Ticket[]>(initialTickets);
+  const { tickets, loading, error, deleteTicket, updateTicket } = useTickets();
   const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(null);
   const [respondTicket, setRespondTicket] = React.useState<Ticket | null>(null);
   const [responseMsg, setResponseMsg] = React.useState('');
@@ -46,32 +40,30 @@ const TicketsList: React.FC = () => {
   };
 
   const handleDeleteTicket = (ticketId: number) => {
-    setTickets((prev) => prev.filter(t => t.id !== ticketId));
+    deleteTicket(ticketId);
     setSelectedTicket(null);
     setRespondTicket(null);
   };
 
-  const handleSubmitResponse = (e: React.FormEvent) => {
+  const handleSubmitResponse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (respondTicket) {
-      setTickets((prev) =>
-        prev.map((t) =>
-          t.id === respondTicket.id ? { ...t, status: 'Closed', response: responseMsg } : t
-        )
-      );
+      await updateTicket(respondTicket.id, { status: 'closed', response: responseMsg });
       setRespondTicket(null);
-      setSelectedTicket(null); // Also close view modal if open
+      setSelectedTicket(null);
       setResponseMsg('');
     }
   };
 
   // Find the latest selected ticket from state (to get updated response)
-  const selectedTicketData = selectedTicket ? tickets.find(t => t.id === selectedTicket.id) : null;
+  const selectedTicketData = selectedTicket ? tickets.find((t: Ticket) => t.id === selectedTicket.id) : null;
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold mb-4">Tickets List</h2>
-      {sortedTickets.map((ticket) => (
+      {loading && <div>Loading tickets...</div>}
+      {error && <div className="text-red-500">{error}</div>}
+      {!loading && !error && sortedTickets.map((ticket) => (
         <div
           key={ticket.id}
           className="bg-white rounded-lg shadow p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:shadow-lg transition"

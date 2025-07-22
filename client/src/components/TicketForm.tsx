@@ -1,16 +1,31 @@
 import * as React from 'react';
+import { useTickets } from '../hooks/useTickets';
 
-const getRandomTicketNumber = () => Math.floor(100000 + Math.random() * 900000);
+
 
 const TicketForm: React.FC = () => {
   const [submitted, setSubmitted] = React.useState(false);
   const [ticketNumber, setTicketNumber] = React.useState<number | null>(null);
+  const { createTicket } = useTickets();
+  const [form, setForm] = React.useState({ subject: '', description: '' });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const num = getRandomTicketNumber();
-    setTicketNumber(num);
-    setSubmitted(true);
+    // here should call the OpenAI to process the ticket and get the priority
+    const newTicket = await createTicket({
+      subject: form.subject,
+      message: form.description,
+      status: 'new',
+      priority: 'low', // get from the process of OpenAI
+    });
+    if (newTicket?.id) {
+      setTicketNumber(newTicket.id);
+      setSubmitted(true);
+    }
   };
 
   if (submitted && ticketNumber) {
@@ -37,6 +52,8 @@ const TicketForm: React.FC = () => {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
             placeholder="Enter ticket subject"
             required
+            value={form.subject}
+            onChange={handleChange}
           />
         </div>
         <div>
@@ -48,6 +65,8 @@ const TicketForm: React.FC = () => {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
             placeholder="Describe your issue..."
             required
+            value={form.description}
+            onChange={handleChange}
           />
         </div>
         <button
