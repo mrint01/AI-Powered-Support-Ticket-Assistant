@@ -35,6 +35,7 @@ export function useTickets() {
           priority: t.priority,
           message: t.description,
           response: t.response,
+          ai_results: t.ai_results,
         }));
         setTickets(mapped);
         setLoading(false);

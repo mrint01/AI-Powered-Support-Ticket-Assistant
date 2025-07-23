@@ -2,21 +2,46 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket } from '../entities/ticket.entity';
+import { OpenAIService } from '../openai.service';
+import { AIResult, PriorityLevel } from '../entities/ai_result.entity';
 
 @Injectable()
 export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
+    private readonly openAIService: OpenAIService,
+    @InjectRepository(AIResult)
+    private readonly aiResultRepository: Repository<AIResult>,
   ) {}
 
-  create(data: Partial<Ticket>) {
-    const ticket = this.ticketRepository.create(data);
-    return this.ticketRepository.save(ticket);
+  async create(data: Partial<Ticket>) {
+    // Call OpenAI to get priority and summary
+    const { priority, summary } = await this.openAIService.prioritizeAndSummarize(
+      data.title,
+      data.description,
+    );
+    const ticket = this.ticketRepository.create({
+      ...data,
+      priority,
+    });
+    const savedTicket = await this.ticketRepository.save(ticket);
+
+    // Save AI result
+    const aiResult = this.aiResultRepository.create({
+      ticket: savedTicket,
+      summary,
+      priority: priority as PriorityLevel,
+    });
+    await this.aiResultRepository.save(aiResult);
+
+    return savedTicket;
   }
 
   findAll() {
-    return this.ticketRepository.find({ relations: ['user'] });
+    return this.ticketRepository.find({
+      relations: ['user', 'ai_results'],
+    });
   }
 
   findOne(id: string) {

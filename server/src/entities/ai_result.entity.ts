@@ -12,7 +12,7 @@ export class AIResult {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Ticket, { nullable: false })
+  @ManyToOne(() => Ticket, { nullable: false, onDelete: 'CASCADE' })
   ticket: Ticket;
 
   @Column('text', { nullable: true })

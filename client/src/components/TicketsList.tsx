@@ -12,7 +12,10 @@ type Ticket = {
   priority: Priority;
   message: string;
   response?: string;
+  ai_results?: { summary?: string }[];
 };
+
+type TicketWithAIResult = Ticket & { ai_results?: { summary?: string }[] };
 
 const statusColors: Record<string, string> = {
   Open: 'bg-green-100 text-green-800',
@@ -28,11 +31,12 @@ const priorityOrder: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 
 const TicketsList: React.FC = () => {
   const { tickets, loading, error, deleteTicket, updateTicket } = useTickets();
+  const typedTickets = tickets as TicketWithAIResult[];
   const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(null);
   const [respondTicket, setRespondTicket] = React.useState<Ticket | null>(null);
   const [responseMsg, setResponseMsg] = React.useState('');
 
-  const sortedTickets = [...tickets].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  const sortedTickets = [...typedTickets].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
   const handleRespond = (ticket: Ticket) => {
     setRespondTicket(ticket);
@@ -56,7 +60,7 @@ const TicketsList: React.FC = () => {
   };
 
   // Find the latest selected ticket from state (to get updated response)
-  const selectedTicketData = selectedTicket ? tickets.find((t: Ticket) => t.id === selectedTicket.id) : null;
+  const selectedTicketData = selectedTicket ? typedTickets.find((t: TicketWithAIResult) => t.id === selectedTicket.id) : null;
 
   return (
     <div className="space-y-6">
@@ -74,7 +78,11 @@ const TicketsList: React.FC = () => {
               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${priorityColors[ticket.priority]}`}>{ticket.priority}</span>
               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[ticket.status]}`}>{ticket.status}</span>
             </div>
-            <div className="text-gray-800 font-bold text-xl mb-1">{ticket.subject}</div>
+            <div className="text-gray-800 font-bold text-xl mb-1">
+              {ticket.ai_results?.[0]?.summary
+                ? ticket.ai_results[0].summary
+                : ticket.subject}
+            </div>
             <div className="text-gray-500 text-sm">Created: {ticket.created}</div>
           </div>
           <div className="flex gap-2 self-end md:self-auto">
@@ -107,8 +115,24 @@ const TicketsList: React.FC = () => {
               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${priorityColors[selectedTicketData.priority]}`}>{selectedTicketData.priority}</span>
               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[selectedTicketData.status]}`}>{selectedTicketData.status}</span>
             </div>
-            <div className="text-xl font-bold mb-2">{selectedTicketData.subject}</div>
-            <div className="text-gray-700 mb-4 whitespace-pre-line">{selectedTicketData.message}</div>
+            <div className="text-xl font-bold mb-2">
+              {selectedTicketData?.ai_results?.[0]?.summary ? (
+                <>
+                  <span className="block text-gray-500 text-sm mb-1">AI Summary:</span>
+                  <span className="block text-lg text-gray-800 mb-2">{selectedTicketData.ai_results[0].summary}</span>
+                  <span className="block text-gray-400 text-xs mb-1">Subject:</span>
+                  <span className="block text-base text-gray-900 mb-2">{selectedTicketData.subject}</span>
+                </>
+              ) : (
+               <>
+                <span className="block text-gray-400 text-xs mb-1">Subject:</span>
+                <span className="block text-base text-gray-900 mb-2">{selectedTicketData?.subject}</span>
+                </>
+              )}
+            </div>
+            <div className="text-gray-700 mb-4 whitespace-pre-line">
+            <span className="block text-gray-400 text-xs mb-1">Message:</span>
+            {selectedTicketData.message}</div>
             {selectedTicketData.response && (
               <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded">
                 <div className="font-semibold text-blue-700 mb-1">Response:</div>

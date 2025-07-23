@@ -1,5 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { User } from './user.entity';
+import { AIResult } from './ai_result.entity';
 
 export enum TicketStatus {
   NEW = 'new',
@@ -22,6 +31,9 @@ export class Ticket {
   @ManyToOne(() => User, { nullable: true })
   user: User | null;
 
+  @OneToMany(() => AIResult, aiResult => aiResult.ticket)
+  ai_results: AIResult[];
+
   @Column()
   title: string;
 
@@ -42,4 +54,4 @@ export class Ticket {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-} 
+}

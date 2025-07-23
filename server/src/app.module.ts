@@ -7,6 +7,7 @@ import { AdminAction } from './entities/admin_action.entity';
 import { AIResult } from './entities/ai_result.entity';
 import { Session } from './entities/session.entity';
 import { TicketStatusHistory } from './entities/ticket_status_history.entity';
+import { OpenAIService } from './openai.service';
 
 @Module({
   imports: [
@@ -28,5 +29,7 @@ import { TicketStatusHistory } from './entities/ticket_status_history.entity';
     TypeOrmModule.forFeature([Session]),
     TypeOrmModule.forFeature([TicketStatusHistory]),
   ],
+  controllers: [],
+  providers: [OpenAIService],
 })
 export class AppModule {}
