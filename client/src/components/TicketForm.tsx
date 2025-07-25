@@ -19,7 +19,7 @@ const TicketForm: React.FC = () => {
     const newTicket = await createTicket({
       subject: form.subject,
       message: form.description,
-      status: 'new',
+      status: 'open',
       priority: 'low', // get from the process of OpenAI
     });
     if (newTicket?.id) {

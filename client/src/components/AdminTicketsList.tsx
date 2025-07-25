@@ -1,19 +1,23 @@
 import * as React from "react";
-import { HiEye, HiReply, HiTrash, HiX } from "react-icons/hi";
+import { HiEye, HiReply, HiTrash, HiX, HiCheck } from "react-icons/hi";
 import { useTickets } from "../hooks/useTickets";
 import { useAuth } from "../AuthContext";
 
+type Priority = "high" | "medium" | "low";
 
 type Ticket = {
   id: number;
   subject: string;
   status: string;
   created: string;
+  priority: Priority;
   message: string;
   response?: string;
+  ai_results?: { summary?: string }[];
+  user: { id: number; username: string};
 };
 
-type TicketWithAIResult = Ticket
+type TicketWithAIResult = Ticket & { ai_results?: { summary?: string }[] };
 
 const statusColors: Record<string, string> = {
   Open: "bg-green-100 text-green-800",
@@ -21,8 +25,21 @@ const statusColors: Record<string, string> = {
   Resolved: "bg-purple-100 text-purple-800",
   Closed: "bg-gray-100 text-gray-800",
 };
+const priorityColors: Record<Priority, string> = {
+  high: "bg-red-100 text-red-800",
+  medium: "bg-yellow-100 text-yellow-800",
+  low: "bg-blue-100 text-blue-800",
+};
+const priorityOrder: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 
-const TicketsList: React.FC = () => {
+const statusOptions = [
+  { value: 'open', label: 'Open' },
+  { value: 'in progress', label: 'In Progress' },
+  { value: 'resolved', label: 'Resolved' },
+  { value: 'closed', label: 'Closed' },
+];
+
+const AdminTicketsList: React.FC = () => {
   const { tickets, loading, error, deleteTicket, updateTicket } = useTickets();
   const { user } = useAuth();
   const typedTickets = tickets as TicketWithAIResult[];
@@ -33,7 +50,7 @@ const TicketsList: React.FC = () => {
   const [responseMsg, setResponseMsg] = React.useState("");
 
   const sortedTickets = [...typedTickets].sort(
-    (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
+    (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
   );
 
   const handleRespond = (ticket: Ticket) => {
@@ -41,14 +58,17 @@ const TicketsList: React.FC = () => {
     setResponseMsg("");
   };
 
-  const handleCloseTicket = async (ticketId: number) => {
-    await updateTicket(ticketId, { status: "closed" });
+  const handleDeleteTicket = (ticketId: number) => {
+    deleteTicket(ticketId);
+    setSelectedTicket(null);
+    setRespondTicket(null);
   };
 
   const handleSubmitResponse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (respondTicket) {
       await updateTicket(respondTicket.id, {
+        status: "closed",
         response: responseMsg,
       });
       setRespondTicket(null);
@@ -66,6 +86,8 @@ const TicketsList: React.FC = () => {
     ? typedTickets.find((t: TicketWithAIResult) => t.id === selectedTicket.id)
     : null;
 
+    
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold mb-4">Tickets List</h2>
@@ -80,18 +102,31 @@ const TicketsList: React.FC = () => {
           >
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg font-semibold">#{ticket.id}</span>
-
+                <span className="text-lg font-semibold">#{ticket.user?.username}</span>
                 <span
                   className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    statusColors[ticket.status]
+                    priorityColors[ticket.priority]
                   }`}
                 >
-                  {ticket.status}
+                  {ticket.priority}
                 </span>
+                <select
+                  className={`px-2 py-1 text-xs font-semibold rounded-full focus:outline-none ${statusColors[ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)]}`}
+                  value={ticket.status.toLowerCase()}
+                  onChange={e => updateTicket(ticket.id, { status: e.target.value })}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {statusOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="text-gray-800 font-bold text-xl mb-1">
-                {ticket.subject}
+                {ticket.ai_results?.[0]?.summary
+                  ? ticket.ai_results[0].summary
+                  : ticket.subject}
               </div>
               <div className="text-gray-500 text-sm">
                 Created: {ticket.created}
@@ -105,40 +140,21 @@ const TicketsList: React.FC = () => {
               >
                 <HiEye size={20} />
               </button>
-              {ticket.status.toLowerCase() !== "closed" && (
-                <button
-                  aria-label="Respond"
-                  className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white p-2 rounded shadow transition"
-                  onClick={() => handleRespond(ticket)}
-                  disabled={ticket.status.toLowerCase() === "closed"}
-                  style={{
-                    opacity: ticket.status.toLowerCase() === "closed" ? 0.5 : 1,
-                    cursor:
-                      ticket.status.toLowerCase() === "closed"
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
-                >
-                  <HiReply size={20} />
-                </button>
-              )}
-              {ticket.status.toLowerCase() !== "closed" && (
-                <button
-                  aria-label="Close"
-                  className="flex items-center justify-center bg-gray-500 hover:bg-gray-600 text-white p-2 rounded shadow transition"
-                  onClick={() => handleCloseTicket(ticket.id)}
-                  disabled={ticket.status.toLowerCase() === "closed"}
-                  style={{
-                    opacity: ticket.status.toLowerCase() === "closed" ? 0.5 : 1,
-                    cursor:
-                      ticket.status.toLowerCase() === "closed"
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
-                >
-                  <HiX size={20} />
-                </button>
-              )}
+              <button
+                aria-label="Respond"
+                className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white p-2 rounded shadow transition"
+                onClick={() => handleRespond(ticket)}
+              >
+                <HiReply size={20} />
+              </button>
+              <button
+                aria-label="Delete"
+                className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white p-2 rounded shadow transition"
+                onClick={() => handleDeleteTicket(ticket.id)}
+              >
+                <HiTrash size={20} />
+              </button>
+            
             </div>
           </div>
         ))}
@@ -158,7 +174,13 @@ const TicketsList: React.FC = () => {
               <span className="text-lg font-semibold">
                 #{selectedTicketData.id}
               </span>
-            
+              <span
+                className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  priorityColors[selectedTicketData.priority]
+                }`}
+              >
+                {selectedTicketData.priority}
+              </span>
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
                   statusColors[selectedTicketData.status]
@@ -168,10 +190,31 @@ const TicketsList: React.FC = () => {
               </span>
             </div>
             <div className="text-xl font-bold mb-2">
-              <span className="block text-gray-400 text-xs mb-1">Subject:</span>
-              <span className="block text-base text-gray-900 mb-2">
-                {selectedTicketData?.subject}
-              </span>
+              {selectedTicketData?.ai_results?.[0]?.summary ? (
+                <>
+                  <span className="block text-gray-500 text-sm mb-1">
+                    AI Summary:
+                  </span>
+                  <span className="block text-lg text-gray-800 mb-2">
+                    {selectedTicketData.ai_results[0].summary}
+                  </span>
+                  <span className="block text-gray-400 text-xs mb-1">
+                    Subject:
+                  </span>
+                  <span className="block text-base text-gray-900 mb-2">
+                    {selectedTicketData.subject}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="block text-gray-400 text-xs mb-1">
+                    Subject:
+                  </span>
+                  <span className="block text-base text-gray-900 mb-2">
+                    {selectedTicketData?.subject}
+                  </span>
+                </>
+              )}
             </div>
             <div className="text-gray-700 mb-4 whitespace-pre-line">
               <span className="block text-gray-400 text-xs mb-1">Message:</span>
@@ -191,50 +234,20 @@ const TicketsList: React.FC = () => {
               Created: {selectedTicketData.created}
             </div>
             <div className="flex gap-2 justify-end">
-              {selectedTicketData.status.toLowerCase() !== "closed" && (
-                <>
-                  <button
-                    aria-label="Respond"
-                    className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white p-2 rounded shadow transition"
-                    onClick={() => handleRespond(selectedTicketData)}
-                    disabled={
-                      selectedTicketData.status.toLowerCase() === "closed"
-                    }
-                    style={{
-                      opacity:
-                        selectedTicketData.status.toLowerCase() === "closed"
-                          ? 0.5
-                          : 1,
-                      cursor:
-                        selectedTicketData.status.toLowerCase() === "closed"
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                  >
-                    <HiReply size={20} />
-                  </button>
-                  <button
-                    aria-label="Close"
-                    className="flex items-center justify-center bg-gray-500 hover:bg-gray-600 text-white p-2 rounded shadow transition"
-                    onClick={() => handleCloseTicket(selectedTicketData.id)}
-                    disabled={
-                      selectedTicketData.status.toLowerCase() === "closed"
-                    }
-                    style={{
-                      opacity:
-                        selectedTicketData.status.toLowerCase() === "closed"
-                          ? 0.5
-                          : 1,
-                      cursor:
-                        selectedTicketData.status.toLowerCase() === "closed"
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                  >
-                    <HiX size={20} />
-                  </button>
-                </>
-              )}
+              <button
+                aria-label="Respond"
+                className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white p-2 rounded shadow transition"
+                onClick={() => handleRespond(selectedTicketData)}
+              >
+                <HiReply size={20} />
+              </button>
+              <button
+                aria-label="Delete"
+                className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white p-2 rounded shadow transition"
+                onClick={() => handleDeleteTicket(selectedTicketData.id)}
+              >
+                <HiTrash size={20} />
+              </button>
             </div>
           </div>
         </div>
@@ -253,7 +266,13 @@ const TicketsList: React.FC = () => {
             </button>
             <div className="mb-4 flex items-center gap-2">
               <span className="text-lg font-semibold">#{respondTicket.id}</span>
-            
+              <span
+                className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  priorityColors[respondTicket.priority]
+                }`}
+              >
+                {respondTicket.priority}
+              </span>
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
                   statusColors[respondTicket.status]
@@ -288,4 +307,4 @@ const TicketsList: React.FC = () => {
   );
 };
 
-export default TicketsList;
+export default AdminTicketsList;

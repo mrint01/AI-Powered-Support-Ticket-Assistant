@@ -11,8 +11,8 @@ import { User } from './user.entity';
 import { AIResult } from './ai_result.entity';
 
 export enum TicketStatus {
-  NEW = 'new',
-  IN_PROGRESS = 'in_progress',
+  Open = 'open',
+  IN_PROGRESS = 'in progress',
   RESOLVED = 'resolved',
   CLOSED = 'closed',
 }
@@ -40,7 +40,7 @@ export class Ticket {
   @Column('text')
   description: string;
 
-  @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.NEW })
+  @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.Open })
   status: TicketStatus;
 
   @Column({ type: 'enum', enum: TicketPriority, default: TicketPriority.LOW })

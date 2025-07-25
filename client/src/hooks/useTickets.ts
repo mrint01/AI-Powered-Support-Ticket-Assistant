@@ -17,7 +17,7 @@ export function useTickets() {
 
   useEffect(() => {
     const API_URL = import.meta.env.VITE_API_URL;
-    fetch(`${API_URL}/tickets`)
+    fetch(`${API_URL}/tickets`, { credentials: 'include' })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch tickets");
         return res.json();
@@ -36,6 +36,7 @@ export function useTickets() {
           message: t.description,
           response: t.response,
           ai_results: t.ai_results,
+          user: t.user,
         }));
         setTickets(mapped);
         setLoading(false);
@@ -49,7 +50,7 @@ export function useTickets() {
   const deleteTicket = async (id: number) => {
     try {
       const API_URL = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${API_URL}/tickets/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/tickets/${id}`, { method: "DELETE", credentials: 'include' });
       if (!res.ok) throw new Error("Failed to delete ticket");
       setTickets((prev) => prev.filter((t) => t.id !== id));
     } catch (err: any) {
@@ -67,6 +68,7 @@ export function useTickets() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
+        credentials: 'include'
       });
       if (!res.ok) throw new Error("Failed to update ticket");
       setTickets((prev) =>
@@ -93,6 +95,7 @@ export function useTickets() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(backendData),
+        credentials: 'include'
       });
       if (!res.ok) throw new Error("Failed to create ticket");
       const newTicket = await res.json();

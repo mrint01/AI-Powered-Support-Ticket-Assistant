@@ -15,7 +15,7 @@ export class TicketsService {
     private readonly aiResultRepository: Repository<AIResult>,
   ) {}
 
-  async create(data: Partial<Ticket>) {
+  async create(data: Partial<Ticket>,userId: number) {
     // Call OpenAI to get priority and summary
     const { priority, summary } = await this.openAIService.prioritizeAndSummarize(
       data.title,
@@ -24,6 +24,7 @@ export class TicketsService {
     const ticket = this.ticketRepository.create({
       ...data,
       priority,
+      user: { id: userId },
     });
     const savedTicket = await this.ticketRepository.save(ticket);
 
@@ -40,6 +41,13 @@ export class TicketsService {
 
   findAll() {
     return this.ticketRepository.find({
+      relations: ['user', 'ai_results'],
+    });
+  }
+
+  findAllForUser(userId: number) {
+    return this.ticketRepository.find({
+      where: { user: { id: userId } },
       relations: ['user', 'ai_results'],
     });
   }

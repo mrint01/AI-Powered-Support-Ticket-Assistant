@@ -8,6 +8,7 @@ import { AIResult } from './entities/ai_result.entity';
 import { Session } from './entities/session.entity';
 import { TicketStatusHistory } from './entities/ticket_status_history.entity';
 import { OpenAIService } from './openai.service';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { OpenAIService } from './openai.service';
       synchronize: true, // Set to false in production
     }),
     TicketsModule,
-    TypeOrmModule.forFeature([User]),
+    UsersModule,
     TypeOrmModule.forFeature([AdminAction]),
     TypeOrmModule.forFeature([AIResult]),
     TypeOrmModule.forFeature([Session]),
