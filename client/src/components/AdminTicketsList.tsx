@@ -1,7 +1,16 @@
 import * as React from "react";
-import { HiEye, HiReply, HiTrash, HiX, HiCheck } from "react-icons/hi";
+import {
+  HiEye,
+  HiReply,
+  HiTrash,
+  HiX,
+  HiCheck,
+  HiFilter,
+  HiSortAscending,
+} from "react-icons/hi";
 import { useTickets } from "../hooks/useTickets";
 import { useAuth } from "../AuthContext";
+import Conversation from "./Conversation";
 
 type Priority = "high" | "medium" | "low";
 
@@ -12,9 +21,8 @@ type Ticket = {
   created: string;
   priority: Priority;
   message: string;
-  response?: string;
   ai_results?: { summary?: string }[];
-  user: { id: number; username: string};
+  user: { id: number; username: string };
 };
 
 type TicketWithAIResult = Ticket & { ai_results?: { summary?: string }[] };
@@ -33,10 +41,10 @@ const priorityColors: Record<Priority, string> = {
 const priorityOrder: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 
 const statusOptions = [
-  { value: 'open', label: 'Open' },
-  { value: 'in progress', label: 'In Progress' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'closed', label: 'Closed' },
+  { value: "open", label: "Open" },
+  { value: "in progress", label: "In Progress" },
+  { value: "resolved", label: "Resolved" },
+  { value: "closed", label: "Closed" },
 ];
 
 const AdminTicketsList: React.FC = () => {
@@ -46,35 +54,77 @@ const AdminTicketsList: React.FC = () => {
   const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(
     null
   );
-  const [respondTicket, setRespondTicket] = React.useState<Ticket | null>(null);
-  const [responseMsg, setResponseMsg] = React.useState("");
+  const [conversationTicket, setConversationTicket] =
+    React.useState<Ticket | null>(null);
+  const [deleteConfirmTicket, setDeleteConfirmTicket] =
+    React.useState<Ticket | null>(null);
 
-  const sortedTickets = [...typedTickets].sort(
-    (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
-  );
+  // Filter and sort state
+  const [statusFilter, setStatusFilter] = React.useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = React.useState<string>("all");
+  const [sortBy, setSortBy] = React.useState<string>("priority");
+
+  // Filter tickets based on status and priority
+  const filteredTickets = typedTickets.filter((ticket) => {
+    const statusMatch =
+      statusFilter === "all" || ticket.status.toLowerCase() === statusFilter;
+    const priorityMatch =
+      priorityFilter === "all" || ticket.priority === priorityFilter;
+    return statusMatch && priorityMatch;
+  });
+
+  // Sort filtered tickets
+  const sortedTickets = React.useMemo(() => {
+    const tickets = [...filteredTickets];
+
+    switch (sortBy) {
+      case "date-desc":
+        return tickets.sort(
+          (a, b) =>
+            new Date(b.created).getTime() - new Date(a.created).getTime()
+        );
+      case "date-asc":
+        return tickets.sort(
+          (a, b) =>
+            new Date(a.created).getTime() - new Date(b.created).getTime()
+        );
+      case "priority":
+        return tickets.sort(
+          (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+        );
+      case "priority-desc":
+        return tickets.sort(
+          (a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]
+        );
+      default:
+        return tickets.sort(
+          (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+        );
+    }
+  }, [filteredTickets, sortBy]);
 
   const handleRespond = (ticket: Ticket) => {
-    setRespondTicket(ticket);
-    setResponseMsg("");
+    setConversationTicket(ticket);
   };
 
   const handleDeleteTicket = (ticketId: number) => {
-    deleteTicket(ticketId);
-    setSelectedTicket(null);
-    setRespondTicket(null);
+    const ticketToDelete = typedTickets.find((t) => t.id === ticketId);
+    if (ticketToDelete) {
+      setDeleteConfirmTicket(ticketToDelete);
+    }
   };
 
-  const handleSubmitResponse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (respondTicket) {
-      await updateTicket(respondTicket.id, {
-        status: "closed",
-        response: responseMsg,
-      });
-      setRespondTicket(null);
+  const confirmDeleteTicket = () => {
+    if (deleteConfirmTicket) {
+      deleteTicket(deleteConfirmTicket.id);
+      setDeleteConfirmTicket(null);
       setSelectedTicket(null);
-      setResponseMsg("");
+      setConversationTicket(null);
     }
+  };
+
+  const cancelDeleteTicket = () => {
+    setDeleteConfirmTicket(null);
   };
 
   if (!user) {
@@ -86,11 +136,66 @@ const AdminTicketsList: React.FC = () => {
     ? typedTickets.find((t: TicketWithAIResult) => t.id === selectedTicket.id)
     : null;
 
-    
-
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold mb-4">Tickets List</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h2 className="text-2xl font-bold">Tickets List</h2>
+
+        {/* Filter and Sort Controls */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <HiFilter className="text-gray-500" size={16} />
+            <select
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="open">Open</option>
+              <option value="in progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+
+          {/* Priority Filter */}
+          <div className="flex items-center gap-2">
+            <HiFilter className="text-gray-500" size={16} />
+            <select
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+            >
+              <option value="all">All Priority</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <HiSortAscending className="text-gray-500" size={16} />
+            <select
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="priority">Priority (High to Low)</option>
+              <option value="priority-desc">Priority (Low to High)</option>
+              <option value="date-desc">Date (Newest First)</option>
+              <option value="date-asc">Date (Oldest First)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Results count */}
+      <div className="text-sm text-gray-600">
+        Showing {sortedTickets.length} of {typedTickets.length} tickets
+      </div>
+
       {loading && <div>Loading tickets...</div>}
       {error && <div className="text-red-500">{error}</div>}
       {!loading &&
@@ -102,7 +207,9 @@ const AdminTicketsList: React.FC = () => {
           >
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg font-semibold">#{ticket.user?.username}</span>
+                <span className="text-lg font-semibold">
+                  #{ticket.user?.username}
+                </span>
                 <span
                   className={`px-2 py-1 text-xs font-semibold rounded-full ${
                     priorityColors[ticket.priority]
@@ -111,12 +218,19 @@ const AdminTicketsList: React.FC = () => {
                   {ticket.priority}
                 </span>
                 <select
-                  className={`px-2 py-1 text-xs font-semibold rounded-full focus:outline-none ${statusColors[ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)]}`}
+                  className={`px-2 py-1 text-xs font-semibold rounded-full focus:outline-none ${
+                    statusColors[
+                      ticket.status.charAt(0).toUpperCase() +
+                        ticket.status.slice(1)
+                    ]
+                  }`}
                   value={ticket.status.toLowerCase()}
-                  onChange={e => updateTicket(ticket.id, { status: e.target.value })}
-                  style={{ cursor: 'pointer' }}
+                  onChange={(e) =>
+                    updateTicket(ticket.id, { status: e.target.value })
+                  }
+                  style={{ cursor: "pointer" }}
                 >
-                  {statusOptions.map(opt => (
+                  {statusOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -154,7 +268,6 @@ const AdminTicketsList: React.FC = () => {
               >
                 <HiTrash size={20} />
               </button>
-            
             </div>
           </div>
         ))}
@@ -220,16 +333,7 @@ const AdminTicketsList: React.FC = () => {
               <span className="block text-gray-400 text-xs mb-1">Message:</span>
               {selectedTicketData.message}
             </div>
-            {selectedTicketData.response && (
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded">
-                <div className="font-semibold text-blue-700 mb-1">
-                  Response:
-                </div>
-                <div className="text-blue-900 whitespace-pre-line">
-                  {selectedTicketData.response}
-                </div>
-              </div>
-            )}
+
             <div className="text-gray-500 text-sm mb-6">
               Created: {selectedTicketData.created}
             </div>
@@ -254,52 +358,53 @@ const AdminTicketsList: React.FC = () => {
       )}
 
       {/* Modal for responding to ticket */}
-      {respondTicket && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/60">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative animate-fade-in">
+      {conversationTicket && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl h-[80vh] relative animate-fade-in flex flex-col">
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-              onClick={() => setRespondTicket(null)}
+              onClick={() => setConversationTicket(null)}
               aria-label="Close"
-            >
-              <HiX size={24} />
-            </button>
-            <div className="mb-4 flex items-center gap-2">
-              <span className="text-lg font-semibold">#{respondTicket.id}</span>
-              <span
-                className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  priorityColors[respondTicket.priority]
-                }`}
-              >
-                {respondTicket.priority}
-              </span>
-              <span
-                className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  statusColors[respondTicket.status]
-                }`}
-              >
-                {respondTicket.status}
-              </span>
+            ></button>
+            <Conversation
+              ticketId={conversationTicket.id}
+              isAdmin={true}
+              onClose={() => setConversationTicket(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Modal for delete confirmation */}
+      {deleteConfirmTicket && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60">
+          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative animate-fade-in">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <HiTrash className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Delete Ticket
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete ticket #{deleteConfirmTicket.id}
+                ? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={cancelDeleteTicket}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteTicket}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div className="text-xl font-bold mb-2">
-              {respondTicket.subject}
-            </div>
-            <form onSubmit={handleSubmitResponse} className="space-y-4">
-              <textarea
-                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={4}
-                placeholder="Type your response..."
-                value={responseMsg}
-                onChange={(e) => setResponseMsg(e.target.value)}
-                required
-              />
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow transition duration-200"
-              >
-                Send Response
-              </button>
-            </form>
           </div>
         </div>
       )}

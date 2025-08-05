@@ -2,7 +2,7 @@ import * as React from "react";
 import { HiEye, HiReply, HiTrash, HiX } from "react-icons/hi";
 import { useTickets } from "../hooks/useTickets";
 import { useAuth } from "../AuthContext";
-
+import Conversation from "./Conversation";
 
 type Ticket = {
   id: number;
@@ -13,7 +13,7 @@ type Ticket = {
   response?: string;
 };
 
-type TicketWithAIResult = Ticket
+type TicketWithAIResult = Ticket;
 
 const statusColors: Record<string, string> = {
   Open: "bg-green-100 text-green-800",
@@ -31,18 +31,37 @@ const TicketsList: React.FC = () => {
   );
   const [respondTicket, setRespondTicket] = React.useState<Ticket | null>(null);
   const [responseMsg, setResponseMsg] = React.useState("");
+  const [closeConfirmTicket, setCloseConfirmTicket] =
+    React.useState<Ticket | null>(null);
+  const [conversationTicket, setConversationTicket] =
+    React.useState<Ticket | null>(null);
 
   const sortedTickets = [...typedTickets].sort(
     (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
   );
 
   const handleRespond = (ticket: Ticket) => {
-    setRespondTicket(ticket);
-    setResponseMsg("");
+    setConversationTicket(ticket);
   };
 
   const handleCloseTicket = async (ticketId: number) => {
-    await updateTicket(ticketId, { status: "closed" });
+    const ticketToClose = typedTickets.find((t) => t.id === ticketId);
+    if (ticketToClose) {
+      setCloseConfirmTicket(ticketToClose);
+    }
+  };
+
+  const confirmCloseTicket = () => {
+    if (closeConfirmTicket) {
+      updateTicket(closeConfirmTicket.id, { status: "closed" });
+      setCloseConfirmTicket(null);
+      setSelectedTicket(null);
+      setRespondTicket(null);
+    }
+  };
+
+  const cancelCloseTicket = () => {
+    setCloseConfirmTicket(null);
   };
 
   const handleSubmitResponse = async (e: React.FormEvent) => {
@@ -158,7 +177,7 @@ const TicketsList: React.FC = () => {
               <span className="text-lg font-semibold">
                 #{selectedTicketData.id}
               </span>
-            
+
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
                   statusColors[selectedTicketData.status]
@@ -253,7 +272,7 @@ const TicketsList: React.FC = () => {
             </button>
             <div className="mb-4 flex items-center gap-2">
               <span className="text-lg font-semibold">#{respondTicket.id}</span>
-            
+
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
                   statusColors[respondTicket.status]
@@ -281,6 +300,58 @@ const TicketsList: React.FC = () => {
                 Send Response
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for closing ticket */}
+      {closeConfirmTicket && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60">
+          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative animate-fade-in">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <HiX size={24} />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Close Ticket
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to close ticket #{closeConfirmTicket.id}?
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={cancelCloseTicket}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmCloseTicket}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for responding to ticket */}
+      {conversationTicket && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl h-[80vh] relative animate-fade-in flex flex-col">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setConversationTicket(null)}
+              aria-label="Close"
+            ></button>
+            <Conversation
+              ticketId={conversationTicket.id}
+              isAdmin={false}
+              onClose={() => setConversationTicket(null)}
+            />
           </div>
         </div>
       )}

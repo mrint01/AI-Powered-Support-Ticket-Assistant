@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Ticket } from '../entities/ticket.entity';
 import { OpenAIService } from '../openai.service';
 import { AIResult, PriorityLevel } from '../entities/ai_result.entity';
+import { MessagesService } from '../messages/messages.service';
+import { MessageType } from '../entities/message.entity';
 
 @Injectable()
 export class TicketsService {
@@ -13,9 +15,10 @@ export class TicketsService {
     private readonly openAIService: OpenAIService,
     @InjectRepository(AIResult)
     private readonly aiResultRepository: Repository<AIResult>,
+    private readonly messagesService: MessagesService,
   ) {}
 
-  async create(data: Partial<Ticket>,userId: number) {
+  async create(data: Partial<Ticket>, userId: number) {
     // Call OpenAI to get priority and summary
     const { priority, summary } = await this.openAIService.prioritizeAndSummarize(
       data.title,
@@ -36,24 +39,35 @@ export class TicketsService {
     });
     await this.aiResultRepository.save(aiResult);
 
+    // Create initial message from the ticket description
+    await this.messagesService.createMessage(
+      savedTicket.id,
+      userId,
+      data.description,
+      MessageType.CLIENT,
+    );
+
     return savedTicket;
   }
 
   findAll() {
     return this.ticketRepository.find({
-      relations: ['user', 'ai_results'],
+      relations: ['user', 'ai_results', 'messages'],
     });
   }
 
   findAllForUser(userId: number) {
     return this.ticketRepository.find({
       where: { user: { id: userId } },
-      relations: ['user', 'ai_results'],
+      relations: ['user', 'ai_results', 'messages'],
     });
   }
 
   findOne(id: string) {
-    return this.ticketRepository.findOne({ where: { id: parseInt(id) }, relations: ['user'] });
+    return this.ticketRepository.findOne({ 
+      where: { id: parseInt(id) }, 
+      relations: ['user', 'messages', 'messages.sender'] 
+    });
   }
 
   update(id: string, data: Partial<Ticket>) {

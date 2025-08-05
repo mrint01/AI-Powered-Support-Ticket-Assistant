@@ -3,10 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { User } from './entities/user.entity';
 import { TicketsModule } from './tickets/tickets.module';
+import { MessagesModule } from './messages/messages.module';
 import { AdminAction } from './entities/admin_action.entity';
 import { AIResult } from './entities/ai_result.entity';
 import { Session } from './entities/session.entity';
 import { TicketStatusHistory } from './entities/ticket_status_history.entity';
+import { Message } from './entities/message.entity';
 import { OpenAIService } from './openai.service';
 import { UsersModule } from './users/users.module';
 
@@ -24,11 +26,13 @@ import { UsersModule } from './users/users.module';
       synchronize: true, // Set to false in production
     }),
     TicketsModule,
+    MessagesModule,
     UsersModule,
     TypeOrmModule.forFeature([AdminAction]),
     TypeOrmModule.forFeature([AIResult]),
     TypeOrmModule.forFeature([Session]),
     TypeOrmModule.forFeature([TicketStatusHistory]),
+    TypeOrmModule.forFeature([Message]),
   ],
   controllers: [],
   providers: [OpenAIService],

@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { AIResult } from './ai_result.entity';
+import { Message } from './message.entity';
 
 export enum TicketStatus {
   Open = 'open',
@@ -34,6 +35,9 @@ export class Ticket {
   @OneToMany(() => AIResult, aiResult => aiResult.ticket)
   ai_results: AIResult[];
 
+  @OneToMany(() => Message, message => message.ticket)
+  messages: Message[];
+
   @Column()
   title: string;
 
@@ -45,9 +49,6 @@ export class Ticket {
 
   @Column({ type: 'enum', enum: TicketPriority, default: TicketPriority.LOW })
   priority: TicketPriority;
-
-  @Column({ type: 'text', nullable: true })
-  response: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
