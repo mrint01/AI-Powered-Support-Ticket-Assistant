@@ -3,6 +3,7 @@ import { useMessages } from '../hooks/useMessages';
 import type { Message, MessageType } from '../hooks/useMessages';
 import { useAuth } from '../AuthContext';
 import { HiPaperAirplane, HiTrash, HiPencil } from 'react-icons/hi';
+import FormatDate from '../utils/fct';
 
 interface ConversationProps {
   ticketId: number;
@@ -169,7 +170,7 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
                     </div>
                     <div className="whitespace-pre-wrap">{message.content}</div>
                     <div className="text-xs opacity-75 mt-1">
-                      {formatTime(message.createdAt)}
+                      <FormatDate dateString={message.createdAt} />
                     </div>
                     {(canEditMessage(message) || canDeleteMessage(message)) && (
                       <div className="flex gap-2 mt-2">

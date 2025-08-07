@@ -43,8 +43,15 @@ export class TicketsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() data: Partial<Ticket>) {
-    return this.ticketsService.update(id, data);
+  update(@Param('id') id: string, @Body() data: Partial<Ticket>, @Req() req: Request) {
+    const userId = (req.session as any).userId;
+    if (!userId) throw new UnauthorizedException('Not authenticated');
+    return this.ticketsService.update(id, data, userId);
+  }
+
+  @Get(':id/history')
+  getTicketHistory(@Param('id') id: string) {
+    return this.ticketsService.getTicketHistory(id);
   }
 
   @Delete(':id')

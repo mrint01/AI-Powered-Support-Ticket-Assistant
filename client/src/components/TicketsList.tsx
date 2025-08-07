@@ -3,6 +3,7 @@ import { HiEye, HiReply, HiTrash, HiX } from "react-icons/hi";
 import { useTickets } from "../hooks/useTickets";
 import { useAuth } from "../AuthContext";
 import Conversation from "./Conversation";
+import FormatDate from "../utils/fct";
 
 type Ticket = {
   id: number;
@@ -113,7 +114,7 @@ const TicketsList: React.FC = () => {
                 {ticket.subject}
               </div>
               <div className="text-gray-500 text-sm">
-                Created: {ticket.created}
+                Created: <FormatDate dateString={ticket.created} />
               </div>
             </div>
             <div className="flex gap-2 self-end md:self-auto">
@@ -207,7 +208,7 @@ const TicketsList: React.FC = () => {
               </div>
             )}
             <div className="text-gray-500 text-sm mb-6">
-              Created: {selectedTicketData.created}
+              Created: <FormatDate dateString={selectedTicketData.created} />
             </div>
             <div className="flex gap-2 justify-end">
               {selectedTicketData.status.toLowerCase() !== "closed" && (

@@ -7,10 +7,13 @@ import {
   HiCheck,
   HiFilter,
   HiSortAscending,
+  HiClock,
 } from "react-icons/hi";
 import { useTickets } from "../hooks/useTickets";
 import { useAuth } from "../AuthContext";
 import Conversation from "./Conversation";
+import { TicketHistoryModal } from "./TicketHistoryModal";
+import FormatDate from "../utils/fct";
 
 type Priority = "high" | "medium" | "low";
 
@@ -48,7 +51,7 @@ const statusOptions = [
 ];
 
 const AdminTicketsList: React.FC = () => {
-  const { tickets, loading, error, deleteTicket, updateTicket } = useTickets();
+  const { tickets, loading, error, deleteTicket, updateTicket, getTicketHistory } = useTickets();
   const { user } = useAuth();
   const typedTickets = tickets as TicketWithAIResult[];
   const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(
@@ -58,6 +61,7 @@ const AdminTicketsList: React.FC = () => {
     React.useState<Ticket | null>(null);
   const [deleteConfirmTicket, setDeleteConfirmTicket] =
     React.useState<Ticket | null>(null);
+  const [historyTicket, setHistoryTicket] = React.useState<Ticket | null>(null);
 
   // Filter and sort state
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
@@ -243,7 +247,7 @@ const AdminTicketsList: React.FC = () => {
                   : ticket.subject}
               </div>
               <div className="text-gray-500 text-sm">
-                Created: {ticket.created}
+                Created: <FormatDate dateString={ticket.created} />
               </div>
             </div>
             <div className="flex gap-2 self-end md:self-auto">
@@ -253,6 +257,13 @@ const AdminTicketsList: React.FC = () => {
                 onClick={() => setSelectedTicket(ticket)}
               >
                 <HiEye size={20} />
+              </button>
+              <button
+                aria-label="History"
+                className="flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white p-2 rounded shadow transition"
+                onClick={() => setHistoryTicket(ticket)}
+              >
+                <HiClock size={20} />
               </button>
               <button
                 aria-label="Respond"
@@ -335,9 +346,16 @@ const AdminTicketsList: React.FC = () => {
             </div>
 
             <div className="text-gray-500 text-sm mb-6">
-              Created: {selectedTicketData.created}
+              Created: <FormatDate dateString={selectedTicketData.created} />
             </div>
             <div className="flex gap-2 justify-end">
+              <button
+                aria-label="History"
+                className="flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white p-2 rounded shadow transition"
+                onClick={() => setHistoryTicket(selectedTicketData)}
+              >
+                <HiClock size={20} />
+              </button>
               <button
                 aria-label="Respond"
                 className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white p-2 rounded shadow transition"
@@ -407,6 +425,16 @@ const AdminTicketsList: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal for ticket history */}
+      {historyTicket && (
+        <TicketHistoryModal
+          isOpen={!!historyTicket}
+          onClose={() => setHistoryTicket(null)}
+          ticketId={historyTicket.id}
+          getTicketHistory={getTicketHistory}
+        />
       )}
     </div>
   );

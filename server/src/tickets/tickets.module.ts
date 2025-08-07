@@ -4,12 +4,13 @@ import { TicketsService } from './tickets.service';
 import { TicketsController } from './tickets.controller';
 import { Ticket } from '../entities/ticket.entity';
 import { AIResult } from '../entities/ai_result.entity';
+import { TicketStatusHistory } from '../entities/ticket_status_history.entity';
 import { OpenAIService } from 'src/openai.service';
 import { MessagesModule } from '../messages/messages.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Ticket, AIResult]),
+    TypeOrmModule.forFeature([Ticket, AIResult, TicketStatusHistory]),
     MessagesModule,
   ],
   controllers: [TicketsController],

@@ -10,6 +10,18 @@ export type Ticket = {
   response?: string;
 };
 
+export interface TicketStatusHistory {
+  id: number;
+  oldStatus: string;
+  newStatus: string;
+  changedBy: {
+    id: number;
+    username: string;
+  };
+  changedAt: string;
+  notes: string;
+}
+
 export function useTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,5 +129,22 @@ export function useTickets() {
     }
   };
 
-  return { tickets, loading, error, deleteTicket, updateTicket, createTicket };
+  const getTicketHistory = async (ticketId: number): Promise<TicketStatusHistory[]> => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/tickets/${ticketId}/history`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch ticket history');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching ticket history:', error);
+      throw error;
+    }
+  };
+
+  return { tickets, loading, error, deleteTicket, updateTicket, createTicket, getTicketHistory };
 }
