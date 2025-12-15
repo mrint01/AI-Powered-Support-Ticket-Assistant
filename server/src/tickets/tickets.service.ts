@@ -7,6 +7,7 @@ import { AIResult, PriorityLevel } from '../entities/ai_result.entity';
 import { MessagesService } from '../messages/messages.service';
 import { MessageType } from '../entities/message.entity';
 import { TicketStatusHistory } from '../entities/ticket_status_history.entity';
+import axios from 'axios';
 
 @Injectable()
 export class TicketsService {
@@ -23,10 +24,11 @@ export class TicketsService {
 
   async create(data: Partial<Ticket>, userId: number) {
     // Call OpenAI to get priority and summary
-    const { priority, summary } = await this.openAIService.prioritizeAndSummarize(
-      data.title,
-      data.description,
-    );
+    const { priority, summary } =
+      await this.openAIService.prioritizeAndSummarize(
+        data.title,
+        data.description,
+      );
     const ticket = this.ticketRepository.create({
       ...data,
       priority,
@@ -50,6 +52,13 @@ export class TicketsService {
       MessageType.CLIENT,
     );
 
+    // call springboot to update ticket status
+    console.log('call springboot');
+    await axios
+      .post(`http://localhost:8080/tickets/${savedTicket?.id}/start`)
+      .catch((err) => {
+        console.log('error calling springboot api: ', err);
+      });
     return savedTicket;
   }
 
@@ -67,17 +76,17 @@ export class TicketsService {
   }
 
   findOne(id: string) {
-    return this.ticketRepository.findOne({ 
-      where: { id: parseInt(id) }, 
-      relations: ['user', 'messages', 'messages.sender'] 
+    return this.ticketRepository.findOne({
+      where: { id: parseInt(id) },
+      relations: ['user', 'messages', 'messages.sender'],
     });
   }
 
   async update(id: string, data: Partial<Ticket>, userId?: number) {
     // Get the current ticket to check if status is changing
-    const currentTicket = await this.ticketRepository.findOne({ 
+    const currentTicket = await this.ticketRepository.findOne({
       where: { id: parseInt(id) },
-      relations: ['user']
+      relations: ['user'],
     });
 
     if (!currentTicket) {
@@ -92,10 +101,14 @@ export class TicketsService {
         oldStatus: currentTicket.status,
         newStatus: data.status,
         changedBy: { id: userId },
-        notes: data.status === 'resolved' ? 'Ticket marked as resolved' : 
-               data.status === 'closed' ? 'Ticket closed' :
-               data.status === 'in progress' ? 'Ticket moved to in progress' : 
-               'Status updated'
+        notes:
+          data.status === 'resolved'
+            ? 'Ticket marked as resolved'
+            : data.status === 'closed'
+              ? 'Ticket closed'
+              : data.status === 'in progress'
+                ? 'Ticket moved to in progress'
+                : 'Status updated',
       });
 
       await this.ticketStatusHistoryRepository.save(historyRecord);
@@ -112,7 +125,7 @@ export class TicketsService {
     return this.ticketStatusHistoryRepository.find({
       where: { ticket: { id: parseInt(ticketId) } },
       relations: ['changedBy'],
-      order: { changedAt: 'DESC' }
+      order: { changedAt: 'DESC' },
     });
   }
 }

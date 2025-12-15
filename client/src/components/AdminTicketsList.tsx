@@ -4,7 +4,6 @@ import {
   HiReply,
   HiTrash,
   HiX,
-  HiCheck,
   HiFilter,
   HiSortAscending,
   HiClock,

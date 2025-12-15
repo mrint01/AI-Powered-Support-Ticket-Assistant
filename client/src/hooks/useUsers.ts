@@ -67,5 +67,22 @@ export function useUsers() {
     }
   };
 
-  return { registerUser, loginUser, getCurrentUser, loading, error };
+  const logoutUser = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_URL}/users/logout`, {
+        credentials: 'include',
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { registerUser, loginUser,logoutUser, getCurrentUser, loading, error };
 }

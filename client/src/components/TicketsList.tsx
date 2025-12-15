@@ -1,5 +1,5 @@
 import * as React from "react";
-import { HiEye, HiReply, HiTrash, HiX } from "react-icons/hi";
+import { HiEye, HiReply, HiX } from "react-icons/hi";
 import { useTickets } from "../hooks/useTickets";
 import { useAuth } from "../AuthContext";
 import Conversation from "./Conversation";
@@ -24,7 +24,7 @@ const statusColors: Record<string, string> = {
 };
 
 const TicketsList: React.FC = () => {
-  const { tickets, loading, error, deleteTicket, updateTicket } = useTickets();
+  const { tickets, loading, error, updateTicket } = useTickets();
   const { user } = useAuth();
   const typedTickets = tickets as TicketWithAIResult[];
   const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(

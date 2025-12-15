@@ -17,13 +17,13 @@ import { UsersModule } from './users/users.module';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host:  'localhost',
-      port:  5432,
-      username:  'AI_tickets',
-      password:  'AI_tickets',
-      database:  'support_tickets',
+      host: process.env.DB_host,
+      port: Number(process.env.DB_port),
+      username: process.env.DB_username,
+      password: process.env.DB_password,
+      database: process.env.DB_database,
       autoLoadEntities: true,
-      synchronize: true, // Set to false in production
+      synchronize: false, // Set to false in production
     }),
     TicketsModule,
     MessagesModule,

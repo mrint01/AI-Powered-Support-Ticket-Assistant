@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import { useUsers } from './hooks/useUsers';
+import { createContext, useContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
+import { useUsers } from "./hooks/useUsers";
 
 interface User {
   id: number;
@@ -22,31 +22,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { getCurrentUser } = useUsers();
+  const { logoutUser } = useUsers();
 
   useEffect(() => {
-    getCurrentUser().then(u => {
+    getCurrentUser().then((u) => {
       if (u) {
         setUser(u);
-        localStorage.setItem('user', JSON.stringify(u));
+        localStorage.setItem("user", JSON.stringify(u));
       } else {
         setUser(null);
-        localStorage.removeItem('user');
+        localStorage.removeItem("user");
       }
       setLoading(false);
     });
     // eslint-disable-next-line
   }, []);
 
-
-
   const login = (user: User) => {
     setUser(user);
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem("user", JSON.stringify(user));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await logoutUser();
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
   };
 
   return (
@@ -58,6 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-}; 
+};

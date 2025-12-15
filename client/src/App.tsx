@@ -4,7 +4,6 @@ import TicketForm from "./components/TicketForm";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import { AuthProvider, useAuth } from "./AuthContext";
-import AdminRoute from "./AdminRoute";
 import AdminTicketsList from "./components/AdminTicketsList";
 
 function Navbar() {
@@ -46,6 +45,8 @@ function Navbar() {
 
 function HomeRoute() {
   const { user, loading } = useAuth();
+  console.log("user ",user)
+  console.log(" localStorage ", localStorage.getItem("user"))
   if (loading) return <div>Loading...</div>;
   if (user && user.role === "admin") return <AdminTicketsList />;
   return <TicketsList />;

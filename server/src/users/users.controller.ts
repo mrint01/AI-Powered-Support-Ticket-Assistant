@@ -1,4 +1,11 @@
-import { Controller, Post, Body, BadRequestException, Req, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  BadRequestException,
+  Req,
+  Get,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Request } from 'express';
 
@@ -7,7 +14,10 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('register')
-  async register(@Body() body: { username: string; email: string; password: string }, @Req() req: Request) {
+  async register(
+    @Body() body: { username: string; email: string; password: string },
+    @Req() req: Request,
+  ) {
     const { username, email, password } = body;
     if (!username || !email || !password) {
       throw new BadRequestException('All fields are required');
@@ -21,7 +31,10 @@ export class UsersController {
   }
 
   @Post('login')
-  async login(@Body() body: { identifier: string; password: string }, @Req() req: Request) {
+  async login(
+    @Body() body: { identifier: string; password: string },
+    @Req() req: Request,
+  ) {
     const { identifier, password } = body;
     if (!identifier || !password) {
       throw new BadRequestException('All fields are required');
@@ -41,4 +54,10 @@ export class UsersController {
     const { passwordHash, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
-} 
+  @Get('logout')
+  async logout(@Req() req: Request) {
+    (req.session as any).userId = null;
+    (req.session as any).userRole = null;
+    return (req.session as any).userId;
+  }
+}

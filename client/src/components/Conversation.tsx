@@ -77,15 +77,7 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
     return message.senderId === user?.id; // Users can only delete their own messages
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+ 
 
   if (loading) {
     return (
