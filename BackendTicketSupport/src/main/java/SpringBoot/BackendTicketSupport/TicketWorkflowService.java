@@ -16,7 +16,7 @@ public class TicketWorkflowService {
 
 	private static final Logger Log = LoggerFactory.getLogger(TicketWorkflowService.class);
 
-	private static final Long SYSTEM_USER_ID = 99999L;
+	private static final Long SYSTEM_USER_ID = 1L;
 	private static final String SYSTEM_NOTE = "Automatic workflow update by system";
 
 	@Autowired
@@ -49,6 +49,7 @@ public class TicketWorkflowService {
 		try {
 			// Simulate queue -> In Progress (after 5 sec)
 			Thread.sleep(5000);
+			Log.info("SYSTEM_USER_ID "+SYSTEM_USER_ID);
 			Log.info("update status after 5s");
 			updateStatus(ticketId, "in progress");
 

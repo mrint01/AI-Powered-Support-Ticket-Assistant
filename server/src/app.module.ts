@@ -11,30 +11,33 @@ import { TicketStatusHistory } from './entities/ticket_status_history.entity';
 import { Message } from './entities/message.entity';
 import { OpenAIService } from './openai.service';
 import { UsersModule } from './users/users.module';
+import { SeedService } from './seed/seed.service';
+import { Ticket } from './entities/ticket.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_host,
-      port: Number(process.env.DB_port),
-      username: process.env.DB_username,
-      password: process.env.DB_password,
-      database: process.env.DB_database,
+      url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: false, // Set to false in production
+      synchronize: true, // 👈 TEMPORARY
     }),
     TicketsModule,
     MessagesModule,
     UsersModule,
-    TypeOrmModule.forFeature([AdminAction]),
-    TypeOrmModule.forFeature([AIResult]),
-    TypeOrmModule.forFeature([Session]),
-    TypeOrmModule.forFeature([TicketStatusHistory]),
-    TypeOrmModule.forFeature([Message]),
+    TypeOrmModule.forFeature([
+      User,
+      Ticket,
+      AdminAction,
+      AIResult,
+      Session,
+      TicketStatusHistory,
+      Message,
+    ]),
   ],
   controllers: [],
-  providers: [OpenAIService],
+  providers: [OpenAIService, SeedService],
 })
 export class AppModule {}

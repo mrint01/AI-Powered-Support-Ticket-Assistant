@@ -1,0 +1,45 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: ticket-postgres
+    environment:
+      POSTGRES_DB: tickets_db
+      POSTGRES_USER: tickets_user
+      POSTGRES_PASSWORD: tickets_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  nestjs:
+    build: ./server
+    container_name: ticket-nestjs
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://tickets_user:tickets_pass@postgres:5432/tickets_db
+      SPRING_WORKFLOW_URL: http://springboot:8080
+    depends_on:
+      - postgres
+
+  springboot:
+    build: ./BackendTicketSupport
+    container_name: ticket-spring
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tickets_db
+      SPRING_DATASOURCE_USERNAME: tickets_user
+      SPRING_DATASOURCE_PASSWORD: tickets_pass
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./client
+    container_name: ticket-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - nestjs
+
+volumes:
+  postgres_data:
