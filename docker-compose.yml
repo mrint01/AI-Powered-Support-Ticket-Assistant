@@ -4,9 +4,9 @@ services:
     image: postgres:15
     container_name: ticket-postgres
     environment:
-      POSTGRES_DB: tickets_db
-      POSTGRES_USER: tickets_user
-      POSTGRES_PASSWORD: tickets_pass
+      POSTGRES_DB: ticketdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -16,8 +16,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgres://tickets_user:tickets_pass@postgres:5432/tickets_db
-      SPRING_WORKFLOW_URL: http://springboot:8080
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/ticketdb
+      SPRING_WORKFLOW_URL: http://springboot:8080/spring/
     depends_on:
       - postgres
 
@@ -27,9 +27,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tickets_db
-      SPRING_DATASOURCE_USERNAME: tickets_user
-      SPRING_DATASOURCE_PASSWORD: tickets_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ticketdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
     depends_on:
       - postgres
 

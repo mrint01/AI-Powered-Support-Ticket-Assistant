@@ -4,6 +4,8 @@ FROM eclipse-temurin:17-jdk-alpine
 # Set working directory
 WORKDIR /app
 
+RUN mvn clean package
+
 # Copy the jar
 COPY target/*.jar app.jar
 

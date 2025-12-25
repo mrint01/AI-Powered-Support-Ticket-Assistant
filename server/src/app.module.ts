@@ -22,7 +22,7 @@ import { Ticket } from './entities/ticket.entity';
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: true, // 👈 TEMPORARY
+      synchronize: false, // 👈 TEMPORARY
     }),
     TicketsModule,
     MessagesModule,

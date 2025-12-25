@@ -1,12 +1,11 @@
-name: CI + CD Pipeline
+name: CI + CD Pipeline (AWS ECS)
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,43 +26,79 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # 4️⃣ Build Frontend
+      # 4️⃣ Build React Frontend
       - name: Build Frontend
         working-directory: client
         run: |
           npm ci
           npm run build
 
-      # 5️⃣ Build NestJS
+      # 5️⃣ Build NestJS Backend
       - name: Build NestJS
         working-directory: server
         run: |
           npm ci
           npm run build
 
-      # 6️⃣ Build Spring Boot
+      # 6️⃣ Build Spring Boot Backend
       - name: Build Spring Boot
         working-directory: BackendTicketSupport
-        run:
+        run: |
           mvn clean package -DskipTests
 
-
-  
-
-      # 7️⃣ Docker Hub Login (CD starts here)
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      # 7️⃣ Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
 
-      # 8️⃣ Build & Push Docker Images
-      - name: Build & Push Images
+      # 8️⃣ Login to Amazon ECR
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 9️⃣ Build & Push Frontend Image
+      - name: Build & Push Frontend Image
         run: |
-          docker build -t hatemsf/ticket-frontend:latest ./client
-          docker build -t hatemsf/ticket-nestjs:latest ./server
-          docker build -t hatemsf/ticket-spring:latest ./BackendTicketSupport
+          docker build -t ticket-frontend ./client
+          docker tag ticket-frontend:latest \
+            158311564256.dkr.ecr.eu-central-1.amazonaws.com/ticket-frontend:latest
+          docker push \
+            158311564256.dkr.ecr.eu-central-1.amazonaws.com/ticket-frontend:latest
 
-          docker push hatemsf/ticket-frontend:latest
-          docker push hatemsf/ticket-nestjs:latest
-          docker push hatemsf/ticket-spring:latest
+      # 🔟 Build & Push NestJS Image
+      - name: Build & Push NestJS Image
+        run: |
+          docker build -t ticket-nestjs ./server
+          docker tag ticket-nestjs:latest \
+            158311564256.dkr.ecr.eu-central-1.amazonaws.com/ticket-nestjs:latest
+          docker push \
+            158311564256.dkr.ecr.eu-central-1.amazonaws.com/ticket-nestjs:latest
+
+      # 1️⃣1️⃣ Build & Push Spring Image
+      - name: Build & Push Spring Image
+        run: |
+          docker build -t ticket-spring ./BackendTicketSupport
+          docker tag ticket-spring:latest \
+            158311564256.dkr.ecr.eu-central-1.amazonaws.com/ticket-spring:latest
+          docker push \
+            158311564256.dkr.ecr.eu-central-1.amazonaws.com/ticket-spring:latest
+
+      # 1️⃣2️⃣ Deploy to ECS (force new deployment)
+      - name: Deploy ECS services
+        run: |
+          aws ecs update-service \
+            --cluster ticket-cluster \
+            --service ticket-frontend \
+            --force-new-deployment
+
+          aws ecs update-service \
+            --cluster ticket-nestjs \
+            --service ticket-nestjs \
+            --force-new-deployment
+
+          aws ecs update-service \
+            --cluster ticket-cluster \
+            --service ticket-spring \
+            --force-new-deployment

@@ -17,6 +17,11 @@ public class TicketWorkflowController {
 	@Autowired
 	private TicketWorkflowService workflowService;
 
+	@GetMapping("/health")
+	public ResponseEntity<String> health() {
+	    return ResponseEntity.ok("OK");
+	}
+
 	@GetMapping("/list")
 	public ResponseEntity<java.util.List<Ticket>> getAllTickets() {
 		java.util.List<Ticket> tickets = workflowService.getAllTickets();

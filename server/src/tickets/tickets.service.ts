@@ -55,7 +55,7 @@ export class TicketsService {
     // call springboot to update ticket status
     console.log('call springboot');
     await axios
-      .post(`${process.env.SPRING_WORKFLOW_URL}/tickets/${savedTicket?.id}/start`)
+      .post(`${process.env.SPRING_WORKFLOW_URL}/spring/tickets/${savedTicket?.id}/start`)
       .catch((err) => {
         console.log('error calling springboot api: ', err);
       });
