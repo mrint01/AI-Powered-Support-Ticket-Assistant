@@ -90,15 +90,15 @@ jobs:
         run: |
           aws ecs update-service \
             --cluster ticket-cluster \
-            --service ticket-frontend \
-            --force-new-deployment
-
-          aws ecs update-service \
-            --cluster ticket-nestjs \
-            --service ticket-nestjs \
+            --service ticket-frontend-service \
             --force-new-deployment
 
           aws ecs update-service \
             --cluster ticket-cluster \
-            --service ticket-spring \
+            --service ticket-nestjs-service-cycp4fz9 \
+            --force-new-deployment
+
+          aws ecs update-service \
+            --cluster ticket-cluster \
+            --service ticket-spring-service-m6p4jxax \
             --force-new-deployment
