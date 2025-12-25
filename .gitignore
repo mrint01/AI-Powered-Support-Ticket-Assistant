@@ -23,4 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 /.metadata/
-client/.env.production
