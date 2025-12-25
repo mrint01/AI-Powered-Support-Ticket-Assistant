@@ -26,7 +26,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # 4️⃣ Build React Frontend
+     4️⃣.1️⃣ # check the .env.production
+      - name: Create .env.production
+        run: |
+          echo "VITE_API_URL=http://ticket-alb-1930192698.eu-central-1.elb.amazonaws.com/api" > ./frontend/.env.production
+
+      # 4️⃣.2️⃣ Build React Frontend
       - name: Build Frontend
         working-directory: client
         run: |
