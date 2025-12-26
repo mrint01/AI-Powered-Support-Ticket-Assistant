@@ -54,6 +54,12 @@ export class TicketsController {
     return this.ticketsService.getTicketHistory(id);
   }
 
+  @Get(':id/ai-suggestion')
+  async getAISuggestion(@Param('id') id: string) {
+    const suggestion = await this.ticketsService.getAISuggestedResponse(id);
+    return suggestion ? { suggested_response: suggestion } : { suggested_response: null };
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.ticketsService.remove(id);

@@ -23,8 +23,8 @@ export class TicketsService {
   ) {}
 
   async create(data: Partial<Ticket>, userId: number) {
-    // Call OpenAI to get priority and summary
-    const { priority, summary } =
+    // Call OpenAI to get priority, summary, and suggested response
+    const { priority, summary, suggested_response } =
       await this.openAIService.prioritizeAndSummarize(
         data.title,
         data.description,
@@ -36,11 +36,12 @@ export class TicketsService {
     });
     const savedTicket = await this.ticketRepository.save(ticket);
 
-    // Save AI result
+    // Save AI result including suggested response
     const aiResult = this.aiResultRepository.create({
       ticket: savedTicket,
       summary,
       priority: priority as PriorityLevel,
+      suggested_response: suggested_response || null,
     });
     await this.aiResultRepository.save(aiResult);
 
@@ -52,10 +53,23 @@ export class TicketsService {
       MessageType.CLIENT,
     );
 
+    // Create a SYSTEM message for support staff
+    await this.messagesService.createMessage(
+      savedTicket.id,
+      null, // System message has no sender
+      `Thanks for contacting Support.
+We’ve received your ticket and it’s currently being reviewed.
+Reference ID: #${savedTicket.id}.`,
+      MessageType.ADMIN,
+      false, // Not internal - visible to both admin and user
+    );
+
     // call springboot to update ticket status
     console.log('call springboot');
     await axios
-      .post(`${process.env.SPRING_WORKFLOW_URL}/spring/tickets/${savedTicket?.id}/start`)
+      .post(
+        `${process.env.SPRING_WORKFLOW_URL}/spring/tickets/${savedTicket?.id}/start`,
+      )
       .catch((err) => {
         console.log('error calling springboot api: ', err);
       });
@@ -117,8 +131,16 @@ export class TicketsService {
     return this.ticketRepository.update(id, data);
   }
 
-  remove(id: string) {
-    return this.ticketRepository.delete(id);
+  async remove(id: string) {
+    const ticketId = parseInt(id);
+
+    // Delete all ticket status history records first
+    await this.ticketStatusHistoryRepository.delete({
+      ticket: { id: ticketId },
+    });
+
+    // Then delete the ticket
+    return this.ticketRepository.delete(ticketId);
   }
 
   async getTicketHistory(ticketId: string) {
@@ -127,5 +149,13 @@ export class TicketsService {
       relations: ['changedBy'],
       order: { changedAt: 'DESC' },
     });
+  }
+
+  async getAISuggestedResponse(ticketId: string) {
+    const aiResult = await this.aiResultRepository.findOne({
+      where: { ticket: { id: parseInt(ticketId) } },
+      relations: ['ticket'],
+    });
+    return aiResult?.suggested_response || null;
   }
 }

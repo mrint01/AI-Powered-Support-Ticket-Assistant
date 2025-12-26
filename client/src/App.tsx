@@ -45,8 +45,8 @@ function Navbar() {
 
 function HomeRoute() {
   const { user, loading } = useAuth();
-  console.log("user ",user)
-  console.log(" localStorage ", localStorage.getItem("user"))
+  //console.log("user ",user)
+  //console.log(" localStorage ", localStorage.getItem("user"))
   if (loading) return <div>Loading...</div>;
   if (user && user.role === "admin") return <AdminTicketsList />;
   return <TicketsList />;

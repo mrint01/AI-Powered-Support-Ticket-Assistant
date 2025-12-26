@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useMessages } from '../hooks/useMessages';
-import type { Message, MessageType } from '../hooks/useMessages';
-import { useAuth } from '../AuthContext';
-import { HiPaperAirplane, HiTrash, HiPencil } from 'react-icons/hi';
-import FormatDate from '../utils/fct';
+import React, { useState, useRef, useEffect } from "react";
+import { useMessages } from "../hooks/useMessages";
+import type { Message, MessageType } from "../hooks/useMessages";
+import { useAuth } from "../AuthContext";
+import { HiPaperAirplane, HiTrash, HiPencil } from "react-icons/hi";
+import FormatDate from "../utils/fct";
 
 interface ConversationProps {
   ticketId: number;
@@ -11,31 +11,74 @@ interface ConversationProps {
   onClose?: () => void;
 }
 
-const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, onClose }) => {
-  const { messages, loading, error, sendMessage, updateMessage, deleteMessage } = useMessages(ticketId);
+const Conversation: React.FC<ConversationProps> = ({
+  ticketId,
+  isAdmin = false,
+  onClose,
+}) => {
+  const {
+    messages,
+    loading,
+    error,
+    sendMessage,
+    updateMessage,
+    deleteMessage,
+  } = useMessages(ticketId);
   const { user } = useAuth();
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
-  const [editContent, setEditContent] = useState('');
+  const [editContent, setEditContent] = useState("");
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+  const [showSuggestion, setShowSuggestion] = useState(true);
+  const [editingSuggestion, setEditingSuggestion] = useState(false);
+  const [editedSuggestion, setEditedSuggestion] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Fetch AI suggested response for admins
+  useEffect(() => {
+    if (isAdmin && ticketId) {
+      const API_URL = import.meta.env.VITE_API_URL;
+      fetch(`${API_URL}/tickets/${ticketId}/ai-suggestion`, {
+        credentials: "include",
+      })
+        .then((res) => {
+          if (!res.ok) return null;
+          return res.json();
+        })
+        .then((data) => {
+          if (data && data.suggested_response) {
+            setAiSuggestion(data.suggested_response);
+            setEditedSuggestion(data.suggested_response);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching AI suggestion:", err);
+        });
+    }
+  }, [isAdmin, ticketId]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
-    const messageType: MessageType = isAdmin ? 'admin' : 'client';
-    const success = await sendMessage(ticketId, user?.id || 0, newMessage.trim(), messageType);
-    
+    const messageType: MessageType = isAdmin ? "admin" : "client";
+    const success = await sendMessage(
+      ticketId,
+      user?.id || 0,
+      newMessage.trim(),
+      messageType
+    );
+
     if (success) {
-      setNewMessage('');
+      setNewMessage("");
     }
   };
 
@@ -44,10 +87,10 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
     if (!editingMessage || !editContent.trim()) return;
 
     const success = await updateMessage(editingMessage.id, editContent.trim());
-    
+
     if (success) {
       setEditingMessage(null);
-      setEditContent('');
+      setEditContent("");
     }
   };
 
@@ -58,11 +101,11 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
 
   const cancelEditing = () => {
     setEditingMessage(null);
-    setEditContent('');
+    setEditContent("");
   };
 
   const handleDeleteMessage = async (messageId: number) => {
-    if (window.confirm('Are you sure you want to delete this message?')) {
+    if (window.confirm("Are you sure you want to delete this message?")) {
       await deleteMessage(messageId);
     }
   };
@@ -76,8 +119,6 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
     if (isAdmin) return true; // Admins can delete any message
     return message.senderId === user?.id; // Users can only delete their own messages
   };
-
- 
 
   if (loading) {
     return (
@@ -120,15 +161,19 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
           messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.type === 'admin' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${
+                message.type === "admin" || message.type === "system"
+                  ? "justify-end"
+                  : "justify-start"
+              }`}
             >
               <div
                 className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.type === 'admin'
-                    ? 'bg-blue-500 text-white'
-                    : message.type === 'system'
-                    ? 'bg-gray-200 text-gray-700'
-                    : 'bg-gray-100 text-gray-800'
+                  message.type === "admin"
+                    ? "bg-blue-500 text-white"
+                    : message.type === "system"
+                    ? "bg-gray-200 text-gray-700"
+                    : "bg-gray-100 text-gray-800"
                 }`}
               >
                 {editingMessage?.id === message.id ? (
@@ -158,7 +203,10 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
                 ) : (
                   <div>
                     <div className="text-sm opacity-75 mb-1">
-                      {message.sender?.username || 'System'}
+                      {message.sender?.username === "system" ||
+                      message.sender?.username === "admin"
+                        ? "support"
+                        : message.sender?.username || "support"}
                     </div>
                     <div className="whitespace-pre-wrap">{message.content}</div>
                     <div className="text-xs opacity-75 mt-1">
@@ -193,6 +241,63 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
         <div ref={messagesEndRef} />
       </div>
 
+      {/* AI Suggested Response (Admin Only) */}
+      {isAdmin && aiSuggestion && showSuggestion && (
+        <div className="p-4 border-t bg-yellow-50 border-yellow-200">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💡</span>
+              <span className="font-semibold text-gray-700">
+                AI Suggested Response
+              </span>
+            </div>
+            <button
+              onClick={() => setShowSuggestion(false)}
+              className="text-gray-500 hover:text-gray-700 text-sm"
+            >
+              ✕
+            </button>
+          </div>
+          {editingSuggestion ? (
+            <div className="space-y-2">
+              <textarea
+                value={editedSuggestion}
+                onChange={(e) => setEditedSuggestion(e.target.value)}
+                className="w-full p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+                rows={4}
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="p-3 bg-white border border-gray-200 rounded-lg text-gray-800 whitespace-pre-wrap">
+                {aiSuggestion}
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => {
+                    setNewMessage(aiSuggestion);
+                    setShowSuggestion(false);
+                    setTimeout(() => {
+                      document.querySelector("textarea")?.focus();
+                    }, 100);
+                  }}
+                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors"
+                >
+                  ✓ Use this response
+                </button>
+
+                <button
+                  onClick={() => setShowSuggestion(false)}
+                  className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm rounded transition-colors"
+                >
+                  Ignore
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Message Input */}
       <div className="p-4 border-t bg-white">
         <form onSubmit={handleSendMessage} className="flex gap-2">
@@ -216,4 +321,4 @@ const Conversation: React.FC<ConversationProps> = ({ ticketId, isAdmin = false, 
   );
 };
 
-export default Conversation; 
+export default Conversation;

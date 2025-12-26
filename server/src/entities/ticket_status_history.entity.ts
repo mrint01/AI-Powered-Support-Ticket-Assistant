@@ -7,7 +7,7 @@ export class TicketStatusHistory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Ticket, { nullable: false })
+  @ManyToOne(() => Ticket, { nullable: false, onDelete: 'CASCADE' })
   ticket: Ticket;
 
   @Column({ name: 'old_status', type: 'text' })

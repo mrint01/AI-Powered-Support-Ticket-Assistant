@@ -30,7 +30,7 @@ export const TicketHistoryModal: React.FC<TicketHistoryModalProps> = ({
     setError(null);
     try {
       const historyData = await getTicketHistory(ticketId);
-      console.log("historyData", historyData);
+      //console.log("historyData", historyData);
       setHistory(historyData);
     } catch (err) {
       setError("Failed to load ticket history");
@@ -79,7 +79,7 @@ export const TicketHistoryModal: React.FC<TicketHistoryModalProps> = ({
         )}
 
         {!loading && !error && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
             {history.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No history available for this ticket.
