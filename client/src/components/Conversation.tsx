@@ -30,7 +30,7 @@ const Conversation: React.FC<ConversationProps> = ({
   const [editContent, setEditContent] = useState("");
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [showSuggestion, setShowSuggestion] = useState(true);
-  const [editingSuggestion, setEditingSuggestion] = useState(false);
+  const [editingSuggestion] = useState(false);
   const [editedSuggestion, setEditedSuggestion] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
