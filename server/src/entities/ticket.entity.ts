@@ -44,10 +44,10 @@ export class Ticket {
   @Column('text')
   description: string;
 
-  @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.Open })
+  @Column({ type: 'simple-enum', enum: TicketStatus, default: TicketStatus.Open })
   status: TicketStatus;
 
-  @Column({ type: 'enum', enum: TicketPriority, default: TicketPriority.LOW })
+  @Column({ type: 'simple-enum', enum: TicketPriority, default: TicketPriority.LOW })
   priority: TicketPriority;
 
   @CreateDateColumn({ name: 'created_at' })

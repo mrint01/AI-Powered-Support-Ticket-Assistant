@@ -18,7 +18,7 @@ export class AIResult {
   @Column('text', { nullable: true })
   summary: string;
 
-  @Column({ type: 'enum', enum: PriorityLevel, nullable: true })
+  @Column({ type: 'simple-enum', enum: PriorityLevel, nullable: true })
   priority: PriorityLevel;
 
   @Column('text', { nullable: true })

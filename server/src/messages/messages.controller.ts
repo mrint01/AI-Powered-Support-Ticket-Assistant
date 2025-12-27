@@ -7,11 +7,12 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
-  Request,
+  ParseIntPipe,
+  ParseBoolPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
-import { MessageType } from '../entities/message.entity';
+import { CreateMessageDto, UpdateMessageDto } from './dto';
 
 @Controller('messages')
 export class MessagesController {
@@ -19,42 +20,34 @@ export class MessagesController {
 
   @Get('ticket/:ticketId')
   async getMessagesByTicket(
-    @Param('ticketId') ticketId: number,
-    @Query('includeInternal') includeInternal: boolean = false,
+    @Param('ticketId', ParseIntPipe) ticketId: number,
+    @Query('includeInternal', new DefaultValuePipe(false), ParseBoolPipe)
+    includeInternal: boolean,
   ) {
     return await this.messagesService.getMessagesByTicketId(ticketId, includeInternal);
   }
 
   @Post()
-  async createMessage(
-    @Body() body: {
-      ticketId: number;
-      senderId: number;
-      content: string;
-      type: MessageType;
-      isInternal?: boolean;
-    },
-    @Request() req: any,
-  ) {
+  async createMessage(@Body() createMessageDto: CreateMessageDto) {
     return await this.messagesService.createMessage(
-      body.ticketId,
-      body.senderId,
-      body.content,
-      body.type,
-      body.isInternal || false,
+      createMessageDto.ticketId,
+      createMessageDto.senderId,
+      createMessageDto.content,
+      createMessageDto.type,
+      createMessageDto.isInternal || false,
     );
   }
 
   @Put(':id')
   async updateMessage(
-    @Param('id') id: number,
-    @Body() body: { content: string },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateMessageDto: UpdateMessageDto,
   ) {
-    return await this.messagesService.updateMessage(id, body.content);
+    return await this.messagesService.updateMessage(id, updateMessageDto.content);
   }
 
   @Delete(':id')
-  async deleteMessage(@Param('id') id: number) {
+  async deleteMessage(@Param('id', ParseIntPipe) id: number) {
     await this.messagesService.deleteMessage(id);
     return { message: 'Message deleted successfully' };
   }

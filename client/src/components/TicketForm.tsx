@@ -3,29 +3,70 @@ import { useTickets } from '../hooks/useTickets';
 
 
 
+interface ValidationErrors {
+  subject?: string;
+  description?: string;
+}
+
 const TicketForm: React.FC = () => {
   const [submitted, setSubmitted] = React.useState(false);
   const [ticketNumber, setTicketNumber] = React.useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { createTicket } = useTickets();
   const [form, setForm] = React.useState({ subject: '', description: '' });
+  const [errors, setErrors] = React.useState<ValidationErrors>({});
+
+  const validateForm = (): boolean => {
+    const newErrors: ValidationErrors = {};
+
+    // Validate subject (title)
+    if (!form.subject.trim()) {
+      newErrors.subject = 'Subject is required';
+    } else if (form.subject.trim().length < 3) {
+      newErrors.subject = 'Subject must be at least 3 characters long';
+    } else if (form.subject.length > 200) {
+      newErrors.subject = 'Subject must not exceed 200 characters';
+    }
+
+    // Validate description
+    if (!form.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (form.description.trim().length < 10) {
+      newErrors.description = 'Description must be at least 10 characters long';
+    } else if (form.description.length > 5000) {
+      newErrors.description = 'Description must not exceed 5000 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // Clear error for this field when user starts typing
+    if (errors[name as keyof ValidationErrors]) {
+      setErrors({ ...errors, [name]: undefined });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return; // Prevent double submission
     
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       // here should call the OpenAI to process the ticket and get the priority
       const newTicket = await createTicket({
-        subject: form.subject,
-        message: form.description,
-        status: 'open',
-        priority: 'low', // get from the process of OpenAI
+        subject: form.subject.trim(),
+        message: form.description.trim(),
+        // status and priority are set by the backend (status defaults to 'open', priority from OpenAI)
       });
       if (newTicket?.id) {
         setTicketNumber(newTicket.id);
@@ -55,30 +96,58 @@ const TicketForm: React.FC = () => {
       <h2 className="text-2xl font-bold mb-6 text-center">Submit a Ticket</h2>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+          <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+            Subject
+            <span className="text-red-500 ml-1">*</span>
+          </label>
           <input
             type="text"
             id="subject"
             name="subject"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+            className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 text-gray-900 ${
+              errors.subject
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:border-blue-500'
+            }`}
             placeholder="Enter ticket subject"
-            required
             value={form.subject}
             onChange={handleChange}
           />
+          {errors.subject && (
+            <p className="mt-1 text-sm text-red-600">{errors.subject}</p>
+          )}
+          {form.subject.length > 0 && !errors.subject && (
+            <p className="mt-1 text-xs text-gray-500">
+              {form.subject.length}/200 characters
+            </p>
+          )}
         </div>
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            Description
+            <span className="text-red-500 ml-1">*</span>
+          </label>
           <textarea
             id="description"
             name="description"
             rows={4}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+            className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 text-gray-900 ${
+              errors.description
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:border-blue-500'
+            }`}
             placeholder="Describe your issue..."
-            required
             value={form.description}
             onChange={handleChange}
           />
+          {errors.description && (
+            <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+          )}
+          {form.description.length > 0 && !errors.description && (
+            <p className="mt-1 text-xs text-gray-500">
+              {form.description.length}/5000 characters
+            </p>
+          )}
         </div>
         <button
           type="submit"

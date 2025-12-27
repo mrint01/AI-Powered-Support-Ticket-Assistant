@@ -97,11 +97,10 @@ export function useTickets() {
     try {
       const API_URL = import.meta.env.VITE_API_URL;
       // Map frontend fields to backend fields
+      // Only send title and description - status defaults to 'open' and priority is set by OpenAI
       const backendData = {
         title: ticketData.subject,
         description: ticketData.message,
-        status: ticketData.status,
-        priority: ticketData.priority,
       };
       const res = await fetch(`${API_URL}/tickets`, {
         method: "POST",

@@ -40,6 +40,12 @@ jobs:
           npm ci
           npm run build
 
+      # 5️⃣.1️⃣ Run NestJS e2e tests
+      - name: Run NestJS e2e tests
+        working-directory: server
+        run: npm run test:e2e
+
+
       # 6️⃣ Build Spring Boot Backend
       - name: Build Spring Boot
         working-directory: BackendTicketSupport

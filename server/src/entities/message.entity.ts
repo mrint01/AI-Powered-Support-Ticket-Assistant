@@ -34,7 +34,7 @@ export class Message {
   @Column({ name: 'sender_id', nullable: true })
   senderId: number | null;
 
-  @Column({ type: 'enum', enum: MessageType })
+  @Column({ type: 'simple-enum', enum: MessageType })
   type: MessageType;
 
   @Column('text')

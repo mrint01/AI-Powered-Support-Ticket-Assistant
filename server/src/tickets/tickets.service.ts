@@ -7,6 +7,7 @@ import { AIResult, PriorityLevel } from '../entities/ai_result.entity';
 import { MessagesService } from '../messages/messages.service';
 import { MessageType } from '../entities/message.entity';
 import { TicketStatusHistory } from '../entities/ticket_status_history.entity';
+import { CreateTicketDto } from './dto/create-ticket.dto';
 import axios from 'axios';
 
 @Injectable()
@@ -22,7 +23,7 @@ export class TicketsService {
     private readonly messagesService: MessagesService,
   ) {}
 
-  async create(data: Partial<Ticket>, userId: number) {
+  async create(data: CreateTicketDto, userId: number) {
     // Call OpenAI to get priority, summary, and suggested response
     const { priority, summary, suggested_response } =
       await this.openAIService.prioritizeAndSummarize(
@@ -30,7 +31,8 @@ export class TicketsService {
         data.description,
       );
     const ticket = this.ticketRepository.create({
-      ...data,
+      title: data.title,
+      description: data.description,
       priority,
       user: { id: userId },
     });
