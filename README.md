@@ -5,19 +5,15 @@ Built as a learning + portfolio project to demonstrate real-world backend, front
 
 🚀 Live Architecture (Production)
 [ React Frontend ]
-
         |
         v
-
 [ AWS ALB / CloudFront ]
-
         |
         +--> NestJS API (Auth, Tickets, AI)
         |
         +--> Spring Boot Service (Workflow Engine)
         |
         v
-
 [ PostgreSQL (AWS RDS) ]
 
 
