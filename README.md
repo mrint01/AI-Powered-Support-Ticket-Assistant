@@ -4,6 +4,7 @@ A full-stack, cloud-deployed support ticket system that uses AI to summarize, pr
 Built as a learning + portfolio project to demonstrate real-world backend, frontend, DevOps, and AI integration skills.
 
 🚀 Live Architecture (Production)
+```js
 [ React Frontend ]
         |
         v
@@ -15,6 +16,7 @@ Built as a learning + portfolio project to demonstrate real-world backend, front
         |
         v
 [ PostgreSQL (AWS RDS) ]
+```
 
 
 Frontend, NestJS, and Spring Boot are Dockerized
@@ -126,7 +128,7 @@ Push images to AWS ECR
 Deploy updated services to AWS ECS
 
 No manual deployment required 🚀
-
+```js
 📁 Repository Structure
 .
 ├── client/                # React frontend
@@ -135,6 +137,7 @@ No manual deployment required 🚀
 ├── docker-compose.yml     # Local development
 ├── .github/workflows/     # CI/CD pipelines
 └── README.md
+```
 
 🧠 8-Week Project Roadmap (Completed)
 ✅ Week 1 – Core Setup
